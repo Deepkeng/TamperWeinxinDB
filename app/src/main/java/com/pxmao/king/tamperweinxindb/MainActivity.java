@@ -46,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
                 amendFilePermission(currentDBPath);//修改数据的权限
                 String password = calculatePsw();//打开数据的密码
                 File weixinDB = new File(currentDBPath);
-                updateWeiXinDB(weixinDB,password);
+                updateWeiXinDB(weixinDB,password);//修改微信数据库
 
             }
         }.start();
