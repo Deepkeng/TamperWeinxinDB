@@ -24,7 +24,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String TAG="MainActivity";
+    private static final String TAG = "MainActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,21 +32,19 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
 
-
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        new Thread(){
+        new Thread() {
             @Override
             public void run() {
                 isThikerExist();
                 String currentDBPath = getCurrentDBPath();//获取微信的数据库路径
                 amendFilePermission(currentDBPath);//修改数据的权限
                 String password = calculatePsw();//打开数据的密码
-                File weixinDB = new File(currentDBPath);
-                updateWeiXinDB(weixinDB,password);//修改微信数据库
+                updateWeiXinDB(new File(currentDBPath), password);//修改微信数据库
 
             }
         }.start();
@@ -60,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
      * @param databaseFile
      */
     public void updateWeiXinDB(File databaseFile, String password) {
-        String remark = "8948945645616";
+        String remark = "911";
         String nickname = "船长";
 
         SQLiteDatabase.loadLibs(this);
@@ -78,15 +76,16 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-        SQLiteDatabase database = SQLiteDatabase.openOrCreateDatabase(databaseFile, password, null, hook);//打开数据库，获得数据库对象
+       SQLiteDatabase database = SQLiteDatabase.openOrCreateDatabase(databaseFile, password, null, hook);//打开数据库，获得数据库对象
+
 
         //遍历list数据，拿到数据就进行修改
-       // for (int i = 0; i < list.size(); i++) {
+        // for (int i = 0; i < list.size(); i++) {
         //    String nickname = list.get(i).getNickname();
-         //   String remark = list.get(i).getRemark();
-           database.execSQL("update rcontact set conRemark = '" + remark + "' where nickname = '" + nickname + "'");//修改语句
-            // update rcontact set conRemark ='weixin2' where nickname = 'J.Yong'
-      //  }
+        //   String remark = list.get(i).getRemark();
+        database.execSQL("update rcontact set conRemark = '" + remark + "' where nickname = '" + nickname + "'");//修改语句
+        // update rcontact set conRemark ='weixin2' where nickname = 'J.Yong'
+        //  }
 
         //查询remark表，看修改了没有
         net.sqlcipher.Cursor cursor = database.query("rcontact", null, null, null, null, null, null, null);
@@ -183,9 +182,9 @@ public class MainActivity extends AppCompatActivity {
             for (int i = 0; i < personNodes.getLength(); i++) {
                 Element personElement = (Element) personNodes.item(i);
                 value = personElement.getAttribute("value");
-                Log.d("MainActivity","UIN的值是:"+value);
-                if(value.equals("0")){
-                    Log.d("MainActivity","UIN重置了，vule是0");
+                Log.d("MainActivity", "UIN的值是:" + value);
+                if (value.equals("0")) {
+                    Log.d("MainActivity", "UIN重置了，vule是0");
                 }
 //                System.out.println(value);
             }
@@ -236,7 +235,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * 判断微信 Thinker 文件夹是否存在，存在则删除内部文件在修改其权限为不可读，不可写，不可执行状态
      */
-    public  void isThikerExist() {
+    public void isThikerExist() {
         String filePath = "/data/data/com.tencent.mm/tinker";
         amendFilePermission(filePath);
         File thinkerFile = new File(filePath);
