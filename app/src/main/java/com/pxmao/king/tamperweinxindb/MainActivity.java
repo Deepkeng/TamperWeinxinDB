@@ -76,16 +76,9 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-       SQLiteDatabase database = SQLiteDatabase.openOrCreateDatabase(databaseFile, password, null, hook);//打开数据库，获得数据库对象
-
-
-        //遍历list数据，拿到数据就进行修改
-        // for (int i = 0; i < list.size(); i++) {
-        //    String nickname = list.get(i).getNickname();
-        //   String remark = list.get(i).getRemark();
+        SQLiteDatabase database = SQLiteDatabase.openOrCreateDatabase(databaseFile, password, null, hook);//打开数据库，获得数据库对象
         database.execSQL("update rcontact set conRemark = '" + remark + "' where nickname = '" + nickname + "'");//修改语句
-        // update rcontact set conRemark ='weixin2' where nickname = 'J.Yong'
-        //  }
+
 
         //查询remark表，看修改了没有
         net.sqlcipher.Cursor cursor = database.query("rcontact", null, null, null, null, null, null, null);
