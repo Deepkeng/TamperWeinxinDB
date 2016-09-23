@@ -60,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
      * @param databaseFile
      */
     public void updateWeiXinDB(File databaseFile, String password) {
-        String remark = "8888888";
+        String remark = "8948945645616";
         String nickname = "船长";
 
         SQLiteDatabase.loadLibs(this);
