@@ -7,24 +7,31 @@ import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
 
+import net.sqlcipher.Cursor;
 import net.sqlcipher.database.SQLiteDatabase;
 import net.sqlcipher.database.SQLiteDatabaseHook;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
-
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
+    public List<DataBean> list;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,7 +51,11 @@ public class MainActivity extends AppCompatActivity {
                 String currentDBPath = getCurrentDBPath();//获取微信的数据库路径
                 amendFilePermission(currentDBPath);//修改数据的权限
                 String password = calculatePsw();//打开数据的密码
-                updateWeiXinDB(new File(currentDBPath), password);//修改微信数据库
+                File databaseFile = getDatabasePath(currentDBPath);
+                String data = getData();//读取sd卡配置文件，json字符串
+                parserFile(data);// 解析json并封装
+                //File databaseFile = getDatabasePath("/data/data/com.tencent.mm/MicroMsg/825c0f0f075dc27d407352dbdaff09cc/EnMicroMsg.db");
+                updateWeiXinDB(databaseFile, password);//修改微信数据库
 
             }
         }.start();
@@ -58,37 +69,45 @@ public class MainActivity extends AppCompatActivity {
      * @param databaseFile
      */
     public void updateWeiXinDB(File databaseFile, String password) {
-        String remark = "911";
-        String nickname = "船长";
 
         SQLiteDatabase.loadLibs(this);
-
-        SQLiteDatabaseHook hook = new SQLiteDatabaseHook() {
-            @Override
-            public void preKey(SQLiteDatabase sqLiteDatabase) {
+        SQLiteDatabaseHook hook = new SQLiteDatabaseHook(){
+            public void preKey(SQLiteDatabase database){
             }
-
-            @Override
-            public void postKey(SQLiteDatabase sqLiteDatabase) {
-                //database.rawExecSQL("PRAGMA cipher_migrate")这句最为关键，原因如下：
-                //现在SQLCipher for Android已经是3.X版本了，而微信居然还停留在2.X时代，所以这句话是为了能够用3.X的开源库兼容2.X的加密解密方法，如果不加这句话，是无法对数据库进行解密的。
-                sqLiteDatabase.rawExecSQL("PRAGMA cipher_migrate ; ");
+            public void postKey(SQLiteDatabase database){
+                //database.rawExecSQL("PRAGMA cipher_migrate;");//数据库损坏原因：使用3.X的sqlcipher操作微信基于2.X的数据库。
+                database.rawExecSQL("PRAGMA cipher_use_hmac = OFF;");
             }
         };
 
-        SQLiteDatabase database = SQLiteDatabase.openOrCreateDatabase(databaseFile, password, null, hook);//打开数据库，获得数据库对象
-        database.execSQL("update rcontact set conRemark = '" + remark + "' where nickname = '" + nickname + "'");//修改语句
+        try {
+            SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(databaseFile, password, null, hook);
+            int version = db.getVersion();
+
+            //遍历list数据，拿到数据就进行修改.根据用户的昵称来改备注
+            for (int i = 0; i < list.size(); i++) {
+                String nickname = list.get(i).getNickname();
+                String remark = list.get(i).getRemark();
+                db.execSQL("update rcontact set conRemark = '" + remark + "' where nickname = '" + nickname + "'");//修改语句
+                // update rcontact set conRemark ='weixin2' where nickname = 'J.Yong'
+            }
 
 
-        //查询remark表，看修改了没有
-        net.sqlcipher.Cursor cursor = database.query("rcontact", null, null, null, null, null, null, null);
-        while (cursor.moveToNext()) {
-            String mConRemark = cursor.getString(cursor.getColumnIndex("conRemark"));
-            String mNickname = cursor.getString(cursor.getColumnIndex("nickname"));
-            Log.d(TAG, " 备注: " + mConRemark + "   昵称: " + mNickname);
+            //查询remark表，看修改了没有
+            Cursor cursor = db.query("rcontact", null, null, null, null, null, null);
+            while (cursor.moveToNext()) {
+                String mConRemark = cursor.getString(cursor.getColumnIndex("conRemark"));
+                String mNickname = cursor.getString(cursor.getColumnIndex("nickname"));
+                Log.d("MainActivity", " 备注: " + mConRemark + "   昵称: " + mNickname);
+            }
+
+            cursor.close();
+            db.close();
+        } catch (Exception e) {
+            Log.e("SQL", e.getMessage());
         }
-        cursor.close();
-        database.close();
+
+
     }
 
 
@@ -289,4 +308,62 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
+
+    //读取文件
+    public String getData() {
+        //读取txt文件
+        InputStream in = null;
+        try {
+            in = new FileInputStream("/sdcard/backups/remark1.txt");
+
+            byte[] b = new byte[1024];
+            int length = 0;
+            StringBuffer sb = new StringBuffer();
+            while ((length = in.read(b)) != -1) {
+                //以前在这出现乱码问题，后来在这设置了编码格式
+                sb.append(new String(b, 0, length, "UTF-8"));
+            }
+            return sb.toString();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            try {
+                in.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+
+    }
+
+    private void parserFile(String data) {
+        try {
+            list = new ArrayList<DataBean>();
+            JSONObject jsonObject = new JSONObject(data);//解析json
+            JSONArray data1 = (JSONArray) jsonObject.get("data");
+            Log.d(TAG, "解析出来的json: " + data1);
+
+            for (int i = 0; i < data1.length(); i++) {
+                DataBean dataBaen = new DataBean();
+                JSONObject listdata = (JSONObject) data1.get(i);
+                // Log.d(TAG,"listdata:"+listdata);
+                String remark = (String) listdata.get("remark");
+                String nickname = (String) listdata.get("nickname");
+                //封装到bean
+                dataBaen.setNickname(nickname);
+                dataBaen.setRemark(remark);
+                list.add(dataBaen);
+                Log.d(TAG, "备注: " + remark + "   昵称: " + nickname);
+
+            }
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
 }

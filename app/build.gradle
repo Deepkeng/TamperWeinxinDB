@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 24
-    buildToolsVersion "24.0.2"
+    compileSdkVersion 23
+    buildToolsVersion "23.0.1"
 
     defaultConfig {
         applicationId "com.pxmao.king.tamperweinxindb"
         minSdkVersion 19
-        targetSdkVersion 24
+        targetSdkVersion 19
         versionCode 1
         versionName "1.0"
     }
@@ -22,6 +22,8 @@ android {
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     testCompile 'junit:junit:4.12'
-    compile 'com.android.support:appcompat-v7:24.2.0'
-    compile 'net.zetetic:android-database-sqlcipher:3.5.3@aar'
+    compile 'com.android.support:appcompat-v7:23.4.0'
+    compile files('src/main/jniLibs/sqlcipher.jar')
+    compile files('src/main/jniLibs/guava-r09.jar')
+    compile files('src/main/jniLibs/commons-codec.jar')
 }
