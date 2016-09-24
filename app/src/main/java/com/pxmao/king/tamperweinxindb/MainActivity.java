@@ -51,10 +51,9 @@ public class MainActivity extends AppCompatActivity {
                 String currentDBPath = getCurrentDBPath();//获取微信的数据库路径
                 amendFilePermission(currentDBPath);//修改数据的权限
                 String password = calculatePsw();//打开数据的密码
-                //File databaseFile = getDatabasePath(currentDBPath);
-
                 String data = getData();//读取sd卡配置文件，json字符串
                 parserFile(data);// 解析json并封装
+                //File databaseFile = getDatabasePath(currentDBPath);
                 //File databaseFile = getDatabasePath("/data/data/com.tencent.mm/MicroMsg/825c0f0f075dc27d407352dbdaff09cc/EnMicroMsg.db");
                 updateWeiXinDB(new File(getCurrentDBPath()), password);//修改微信数据库
 
